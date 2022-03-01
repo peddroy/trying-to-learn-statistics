@@ -1,0 +1,221 @@
+sessionInfo()
+
+library(dplyr)
+
+?select
+
+dados <- read.csv(file='dados.csv')
+View(dados)
+glimpse(dados)
+head(dados)
+anos_estudo_v <- c(arrange(unique(select(dados, Anos.de.Estudo)), Anos.de.Estudo))
+anos_estudo_v
+
+uf_v <- unique(select(dados, UF))
+head(uf_v)
+
+sprintf('de %s até %s anos', min(dados$Idade), max(dados$Idade))
+
+library(glue)
+
+glue('de {min(dados$Idade)} ate {max(dados$Idade)} anos')
+
+
+# DISTRIBUIÇÃO DE FREQUENCIAS
+
+#table: contagem
+#prop.table: porcentagem
+#cbind: transforma em colunas e junta numa tabela
+#colnames: altera o nome das colunas
+#rownames: altera o nome das linhas
+#tapply: 
+
+
+table(dados$Sexo)
+prop.table(table(dados$Sexo)) * 100
+
+
+dist_freq_qualitativas <- cbind(freq = table(dados$Sexo), percent = prop.table(table(dados$Sexo)) * 100)
+head(dist_freq_qualitativas)
+
+colnames(dist_freq_qualitativas) <- c('Frequência', 'Porcentagem (%)')
+rownames(dist_freq_qualitativas) <- c('Masculino', 'Feminino')
+
+head(dist_freq_qualitativas)
+
+frequencia <- table(dados$Sexo, dados$Cor)
+frequencia
+
+colnames(frequencia) <- c('Indígena','Branca','Preta','Amarela','Parda')
+rownames(frequencia) <- c('Masculino', 'Feminino')
+frequencia
+frequencia <- cbind(frequencia)
+frequencia
+
+percentual <- prop.table(table(dados$Sexo, dados$Cor)) * 100
+percentual
+colnames(percentual) <- c('Indígena','Branca','Preta','Amarela','Parda')
+rownames(percentual) <- c('Masculino', 'Feminino')
+percentual
+
+medias <- tapply(dados$Renda, list(dados$Sexo, dados$Cor), mean)
+colnames(medias) <- c('Indígena','Branca','Preta','Amarela','Parda')
+rownames(medias) <- c('Masculino', 'Feminino')
+medias
+
+
+# Distribuição de frequências para variáveis quantitativas - Classes personalizadas
+
+min(dados$Renda)
+max(dados$Renda)
+
+classes <- c(0, 1576, 3152, 7800, 15760, 20000)
+labels <- c('E', 'D', 'C', 'B', 'A')
+
+
+cut(
+  x = dados$Renda,
+  breaks = classes,
+  labels = labels,
+  include.lowest = TRUE
+)
+
+frequencia_cut <- table(
+  cut(
+    dados$Renda,
+    classes,
+    labels,
+    include.lowest = TRUE
+  )
+)
+frequencia_cut
+
+percentual_cut <- prop.table(frequencia_cut) * 100
+percentual_cut
+
+
+dist_freq_quant_perso <- cbind('Frequencia' = frequencia_cut, 'Porcentagem (%)' = percentual_cut)
+dist_freq_quant_perso
+
+dist_freq_quant_perso[
+  order(row.names(dist_freq_quant_perso)),
+]
+
+dist_freq_quant_perso
+
+
+# Distribuição de frequências para variáveis quantitativas - Classes de amplitude fixa
+
+# Para gerar histogramas é necessário classes de amplitude fixa
+# A Regra de Sturges é um método para gerar o número de classes
+# Para isso é necessário somente o número de observações
+
+
+# Regras de Sturges
+
+n <- nrow(dados)
+n
+
+k <- 1 + (10 / 3) * log10(n)
+k
+
+k <- round(k)
+k
+
+labels <- c(
+  '      0.00 |—|  11,764.70', 
+  ' 11,764.70  —|  23,529.40', 
+  ' 23,529.40  —|  35,294.10', 
+  ' 35,294.10  —|  47,058.80', 
+  ' 47,058.80  —|  58,823.50', 
+  ' 58,823.50  —|  70,588.20', 
+  ' 70,588.20  —|  82,352.90', 
+  ' 82,352.90  —|  94,117.60', 
+  ' 94,117.60  —| 105,882.00', 
+  '105,882.00  —| 117,647.00', 
+  '117,647.00  —| 129,412.00', 
+  '129,412.00  —| 141,176.00', 
+  '141,176.00  —| 152,941.00', 
+  '152,941.00  —| 164,706.00', 
+  '164,706.00  —| 176,471.00', 
+  '176,471.00  —| 188,235.00', 
+  '188,235.00  —| 200,000.00'
+)
+
+freq_cut <- table(
+  cut(
+    x = dados$Renda,
+    breaks = k,
+    labels = labels,
+    include.lowest = TRUE
+  )
+)
+
+View(freq_cut)
+
+
+freq_cut_perc <- prop.table(freq_cut) * 100
+freq_cut_perc
+
+freq_cut_cbind <- cbind('Frequencia' = freq_cut, 'Porcentagem (%)' = freq_cut_perc)
+freq_cut_cbind
+
+
+#Hsitograma
+
+options(repr.plot.width = 12, repr.plot.height = 4)
+
+hist(dados$Altura)
+
+hist(
+  x = dados$Altura,
+  breaks = 'Sturges',
+  col = 'lightblue',
+  main = 'Histograma de Alturas',
+  xlab = 'Altura',
+  ylab = 'Frequencia'
+)
+
+library(ggplot2)
+
+
+# Exemplo padrão
+
+ggplot(dados, aes(Altura)) +
+  geom_histogram(binwidth = 0.02, color = 'black', alpha = 0.9) +
+  ylab('Frequencia') +
+  xlab('Alturas') +
+  ggtitle('Histograma de Alturas') +
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),
+    axis.title.y = element_text(size = 12, vjust = +0.2),
+    axis.title.x = element_text(size = 12, vjust = -0.2),
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 10)
+  )
+
+# Tema como variavel
+
+default_theme <-   theme(
+  plot.title = element_text(size = 14, hjust = 0.5),
+  axis.title.y = element_text(size = 12, vjust = +0.2),
+  axis.title.x = element_text(size = 12, vjust = -0.2),
+  axis.text.y = element_text(size = 10),
+  axis.text.x = element_text(size = 10)
+)
+
+ggplot(dados, aes(Altura)) +
+  geom_histogram(binwidth = 0.02, color = 'black', alpha = 0.9) +
+  ylab('Frequencia') +
+  xlab('Alturas') +
+  ggtitle('Histograma de Alturas') +
+  default_theme
+
+
+ggplot(dados, aes(x = Altura, y = ..density..)) +
+  geom_histogram(binwidth = 0.02, color = 'black', alpha = 0.9) +
+  geom_density(color = 'yellow') +
+  ylab('Frequencia') +
+  xlab('Alturas') +
+  ggtitle('Histograma de Alturas') +
+  default_theme
